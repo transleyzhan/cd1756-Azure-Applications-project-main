@@ -35,6 +35,7 @@ def new_post():
     form = PostForm(request.form)
     if form.validate_on_submit():
         post = Post()
+        app.logger.info('api: new_post, save_changes')
         post.save_changes(form, request.files['image_path'], current_user.id, new=True)
         return redirect(url_for('home'))
     return render_template(
@@ -51,6 +52,7 @@ def post(id):
     post = Post.query.get(int(id))
     form = PostForm(formdata=request.form, obj=post)
     if form.validate_on_submit():
+        app.logger.info('api: post, save_changes')
         post.save_changes(form, request.files['image_path'], current_user.id)
         return redirect(url_for('home'))
     return render_template(
@@ -68,9 +70,11 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user is None or not user.check_password(form.password.data):
+            app.logger.error('Invalid username or password')
             flash('Invalid username or password')
             return redirect(url_for('login'))
         login_user(user, remember=form.remember_me.data)
+        app.logger.info('User log in successfully')
         next_page = request.args.get('next')
         if not next_page or urlparse(next_page).netloc != '':
             next_page = url_for('home')
@@ -105,6 +109,7 @@ def logout():
     if session.get("user"): # Used MS Login
         # Wipe out user and its token cache from session
         session.clear()
+        app.logger.info('User log out successfully')
         # Also logout from your tenant's web session
         return redirect(
             Config.AUTHORITY + "/oauth2/v2.0/logout" +
